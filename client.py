@@ -62,7 +62,7 @@ class FlowerClient(NumPyClient):
 
     def evaluate(self, parameters, config):
         set_parameters(self.net, parameters)
-        loss, accuracy = test(self.opt,self.net, self.valloader)
+        loss, accuracy = test(self.net, self.valloader,opt =self.opt )
         print(f"Final test set performance:\n\tloss {loss}\n\taccuracy {accuracy}")
         return float(loss), len(self.valloader), {"accuracy": float(accuracy)}
 
@@ -76,27 +76,30 @@ if __name__ == "__main__":
     parser.add_argument("--label", type=int, default=0, help="label")
     parser.add_argument("--manual_seed", type=int, default=1111, help="random seed setting")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
-    parser.add_argument("--num_epoch", type=int, default=3, help="number of epochs to train")
+    parser.add_argument("--num_epoch", type=int, default=2, help="number of epochs to train")
     parser.add_argument("--valid_interval", type=int, default=1, help="validation interval")
-    parser.add_argument("--lr", type=float, default=1e-3, help="learning rate")
+    parser.add_argument("--lr", type=float, default=1e-2, help="learning rate")
     
     opt = parser.parse_args()
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
     trainset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
     valset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
      # 目标标签
-    if opt.label == 147:
-        subset = [1, 4, 7]   
-        trainLoader,valloader = getDataLoder(opt,trainset,valset,[1,4,7])
+    if opt.label == 147:       
+        subset = [1, 4, 7]  
+        subset = [i for i in range(10) if i not in subset] 
+        trainLoader,valloader = getDataLoder(opt,trainset,valset,subset)
     elif opt.label == 258:
         subset = [2, 5, 8]
-        trainLoader,valloader = getDataLoder(opt,trainset,valset,[2,5,8])
+        subset = [i for i in range(10) if i not in subset] 
+        trainLoader,valloader = getDataLoder(opt,trainset,valset,subset)
     elif opt.label == 369:
         subset = [3, 6, 9]
-        trainLoader,valloader = getDataLoder(opt,trainset,valset,[3,6,9])
+        subset = [i for i in range(10) if i not in subset] 
+        trainLoader,valloader = getDataLoder(opt,trainset,valset,subset)
     else:
         subset = [0,1,2,3,4,5,6,7,8,9]
-        trainLoader,valloader = getDataLoder(opt,trainset,valset,[1,4,7,2,5,8,3,6,9])
+        trainLoader,valloader = getDataLoder(opt,trainset,valset,subset)
     model = SimpleLeNet()
     client = FlowerClient(model, trainLoader,valloader,opt,savepath=None)
     fl.client.start_client(client=client.to_client(),server_address="127.0.0.1:8080" )
